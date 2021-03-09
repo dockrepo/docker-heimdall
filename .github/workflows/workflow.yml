@@ -1,0 +1,23 @@
+name: Check update everyday
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Check update
+        env:
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          build_date1=$(curl -sX GET "https://hub.docker.com/v2/repositories/linuxserver/heimdall/" | grep -oP '(?<="last_updated": ")[^"]*' | cut -d '.' -f1 | awk '{print $1"Z"}')
+          build_date2=$(curl -sX GET "https://hub.docker.com/v2/repositories/zyao89/heimdall/" | grep -oP '(?<="last_updated": ")[^"]*' | cut -d '.' -f1 | awk '{print $1"Z"}')
+          if [ $build_date1 \> $build_date2 ]
+            then
+              curl -X POST https://hub.docker.com/api/build/v1/source/fee33443-84ac-4f61-b7d4-03fa8bf73b22/trigger/$token/call/
+            else
+              echo up to date
+          fi
